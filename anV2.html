@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Toque y Fama - Fixed Layout</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Toque y Fama - Final Layout</title>
     <style>
         :root { 
             --primary: #1c3e50; 
@@ -16,89 +16,86 @@
             --state-win: #ff9800;
         }
         
+        /* Aseguramos que el html y body no desborden */
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background: var(--bg);
+        }
+
         body { 
             font-family: sans-serif; 
-            background: var(--bg); 
-            margin: 0; padding: 0; 
-            height: 100vh; 
-            display: flex; flex-direction: column; 
-            overflow: hidden; /* Evita el rebote del body en móviles */
+            display: flex; 
+            flex-direction: column; 
         }
 
         #intro-screen {
-            padding: 20px;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 100;
+            padding: 20px; box-sizing: border-box;
             display: flex; flex-direction: column;
-            height: 100%; box-sizing: border-box;
-            background: white; overflow-y: auto;
-            position: absolute; width: 100%; z-index: 10;
         }
 
         #game-screen {
-            display: none;
+            display: none; /* Se activa por JS */
             flex-direction: column;
-            height: 90vh; /* Ocupa exactamente el alto de la pantalla */
-            padding: 5px;
+            height: 100%; /* Usa el alto disponible real */
+            width: 100%;
+            padding: 8px;
             box-sizing: border-box;
         }
 
-        /* Panel Superior: Fijo */
+        /* 1. Panel Superior (Fijo) */
         .top-panel {
-            flex-shrink: 0; /* No se encoge */
-            padding: 5px;
+            flex: 0 0 auto;
+            margin-bottom: 8px;
         }
 
         input { 
             width: 100%; padding: 12px; 
-            font-size: 1.2rem; border: 2px solid var(--primary); 
+            font-size: 1.3rem; border: 2px solid var(--primary); 
             border-radius: 8px; text-align: center;
             box-sizing: border-box;
         }
 
-        /* Área de Historial: Flexible con Scroll */
+        /* 2. Área de Historial (Flexible pero contenida) */
         .history-container {
-            flex-grow: 0; /* Ocupa el espacio restante */
-            height: 90%;
+            flex: 1 1 auto; /* Crece y se encoge según espacio */
             background: white;
             border-radius: 8px;
-            margin: 5px 0;
             padding: 5px 10px;
             overflow-y: auto;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+            min-height: 0; /* CRÍTICO para que flexbox permita scroll interno */
+            -webkit-overflow-scrolling: touch;
         }
 
-        .history-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 6px 0; border-bottom: 1px solid #eee;
-        }
-
-        .digit-group { display: flex; gap: 4px; }
-        .hist-digit-btn { 
-            width: 34px; height: 34px; 
-            border: 1px solid #ccc; border-radius: 4px; 
-            font-weight: bold; font-size: 0.9rem;
-        }
-
-        /* Panel Inferior: Fijo siempre visible */
+        /* 3. Panel Inferior (Fijo y Prioritario) */
         .bottom-tools {
-            flex-shrink: 0; /* No se encoge, siempre mantiene su altura */
-            background: rgba(255,255,255,0.9);
+            flex: 0 0 auto; /* Prohibido encogerse */
+            background: rgba(255,255,255,0.95);
             padding: 10px;
+            margin-top: 8px;
             border-radius: 8px;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .digit-board { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
-            gap: 5px; 
+            gap: 6px; 
         }
 
         .digit-box { 
-            height: 28px; 
+            height: 32px; /* Altura cómoda para dedos */
             border: 1px solid #999; border-radius: 4px; 
             display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; font-size: 0.85rem;
+            font-weight: bold; font-size: 0.9rem;
             background: var(--state-none);
         }
 
@@ -108,44 +105,51 @@
             border-radius: 8px; width: 100%; cursor: pointer;
         }
 
-        #reset-btn {
-            background: #27ae60;
-            margin-top: 8px;
+        .history-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid #eee;
         }
 
-        /* Colores de estado */
+        .digit-group { display: flex; gap: 4px; }
+        .hist-digit-btn { 
+            width: 36px; height: 36px; 
+            border: 1px solid #ccc; border-radius: 4px; 
+            font-weight: bold; font-size: 1rem;
+        }
+
+        /* Estados */
         .bg-none { background-color: var(--state-none) !important; }
         .bg-used { background-color: var(--state-used) !important; }
         .bg-discard { background-color: var(--state-discard) !important; }
         .bg-toque { background-color: var(--state-toque) !important; }
         .bg-fama { background-color: var(--state-fama) !important; }
         .bg-win { background-color: var(--state-win) !important; color: white !important; }
-
-        .result-tag { font-weight: bold; font-size: 0.85rem; color: var(--primary); }
+        .result-tag { font-weight: bold; font-size: 0.9rem; color: var(--primary); }
     </style>
 </head>
 <body>
 
     <div id="intro-screen">
-        <h2 style="color: var(--primary)">Toque y Fama</h2>
-        <p>Descubre la cifra de 5 dígitos distintos.</p>
-        <p><b>Famas (F):</b> Dígito y posición correcta.<br>
-           <b>Toques (T):</b> Dígito correcto, posición falsa.</p>
-        <button class="btn-main" style="margin-top:auto" onclick="initGameFlow()">INICIAR JUEGO</button>
+        <h2 style="color: var(--primary); margin-top: 0;">Toque y Fama</h2>
+        <div style="flex-grow: 1;">
+            <p>Descubre la cifra de 5 dígitos distintos.</p>
+            <p><b>Famas (F):</b> Dígito y posición correcta.</p>
+            <p><b>Toques (T):</b> Dígito correcto, posición falsa.</p>
+        </div>
+        <button class="btn-main" onclick="initGameFlow()">INICIAR JUEGO</button>
     </div>
 
     <div id="game-screen">
         <div class="top-panel">
-            <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Ingresa 5 dígitos">
+            <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Escribe 5 dígitos">
         </div>
 
-        <div class="history-container" id="historyList">
-            </div>
+        <div class="history-container" id="historyList"></div>
 
         <div class="bottom-tools">
             <div class="digit-board" id="digitBoard"></div>
-            <div id="winMsg" style="text-align:center; font-weight:bold; margin: 5px 0; color: #d35400;"></div>
-            <button id="reset-btn" class="btn-main" style="display:none;" onclick="location.reload()">NUEVO JUEGO</button>
+            <div id="winMsg" style="text-align:center; font-weight:bold; color: #d35400; font-size: 0.9rem; min-height: 1.1rem;"></div>
+            <button id="reset-btn" class="btn-main" style="display:none; background: #27ae60;" onclick="location.reload()">NUEVO JUEGO</button>
         </div>
     </div>
 
@@ -166,7 +170,8 @@
         gameScreen.style.display = 'flex';
         generateSecret();
         createDigitBoxes();
-        input.focus();
+        // Un pequeño retraso para asegurar que el teclado no rompa el layout al abrirse
+        setTimeout(() => input.focus(), 300);
     }
 
     function generateSecret() {
@@ -248,27 +253,24 @@
         resSpan.className = 'result-tag';
         resSpan.innerText = `${famas}F / ${toques}T`;
         newItem.appendChild(resSpan);
-        historyList.appendChild(newItem);
         
+        historyList.appendChild(newItem);
         globalSync();
 
-        // Asegura que el último intento sea visible haciendo scroll interno
+        // Scroll al final de la zona blanca
         historyList.scrollTop = historyList.scrollHeight;
 
         if (famas === 5) {
             gameWon = true;
             winMsg.innerText = "¡ADIVINASTE!";
-            digitGroup.querySelectorAll('.hist-digit-btn').forEach(btn => {
-                btn.className = 'hist-digit-btn bg-win';
-            });
+            digitGroup.querySelectorAll('.hist-digit-btn').forEach(btn => btn.className = 'hist-digit-btn bg-win');
             resetBtn.style.display = 'block';
             input.disabled = true;
+            // Scroll de nuevo para asegurar que el botón de nuevo juego sea visible
+            historyList.scrollTop = historyList.scrollHeight;
         }
         input.value = "";
     }
 </script>
 </body>
 </html>
-
-
-
