@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Toque y Fama - Optimizado</title>
+    <title>Toque y Fama - Fixed Layout</title>
     <style>
         :root { 
             --primary: #1c3e50; 
@@ -13,7 +13,7 @@
             --state-discard: #d1d8e0; 
             --state-toque: #a8f6c9;
             --state-fama: #fffac4;
-            --state-win: #ff9800; /* Naranja para la victoria */
+            --state-win: #ff9800;
         }
         
         body { 
@@ -22,49 +22,48 @@
             margin: 0; padding: 0; 
             height: 100vh; 
             display: flex; flex-direction: column; 
-            overflow: hidden;
+            overflow: hidden; /* Evita el rebote del body en móviles */
         }
 
-        /* Pantalla de Introducción */
         #intro-screen {
             padding: 20px;
             display: flex; flex-direction: column;
             height: 100%; box-sizing: border-box;
             background: white; overflow-y: auto;
+            position: absolute; width: 100%; z-index: 10;
         }
 
-        /* Pantalla de Juego */
         #game-screen {
             display: none;
             flex-direction: column;
-            height: 100%;
+            height: 100vh; /* Ocupa exactamente el alto de la pantalla */
             padding: 5px;
             box-sizing: border-box;
         }
 
+        /* Panel Superior: Fijo */
         .top-panel {
+            flex-shrink: 0; /* No se encoge */
             padding: 5px;
-            display: flex; flex-direction: column;
-            gap: 5px;
         }
 
         input { 
-            width: 100%; padding: 10px; 
+            width: 100%; padding: 12px; 
             font-size: 1.2rem; border: 2px solid var(--primary); 
             border-radius: 8px; text-align: center;
             box-sizing: border-box;
         }
 
-        /* Área de Historial - Maximizada */
+        /* Área de Historial: Flexible con Scroll */
         .history-container {
-            flex-grow: 1;
+            flex-grow: 1; /* Ocupa el espacio restante */
             background: white;
             border-radius: 8px;
             margin: 5px 0;
             padding: 5px 10px;
             overflow-y: auto;
-            /* Suaviza el scroll automático */
             scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
         }
 
         .history-item {
@@ -74,36 +73,43 @@
 
         .digit-group { display: flex; gap: 4px; }
         .hist-digit-btn { 
-            width: 32px; height: 32px; 
+            width: 34px; height: 34px; 
             border: 1px solid #ccc; border-radius: 4px; 
             font-weight: bold; font-size: 0.9rem;
         }
 
-        /* Panel Inferior: Pirámide Reducida */
+        /* Panel Inferior: Fijo siempre visible */
         .bottom-tools {
-            background: rgba(255,255,255,0.8);
-            padding: 8px;
+            flex-shrink: 0; /* No se encoge, siempre mantiene su altura */
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
             border-radius: 8px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
 
         .digit-board { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
-            gap: 4px; 
+            gap: 5px; 
         }
 
         .digit-box { 
-            height: 25px; /* Altura reducida para ganar espacio arriba */
+            height: 28px; 
             border: 1px solid #999; border-radius: 4px; 
             display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; font-size: 0.8rem;
+            font-weight: bold; font-size: 0.85rem;
             background: var(--state-none);
         }
 
         .btn-main {
             background: var(--primary); color: white; border: none;
-            padding: 12px; font-size: 1.1rem; font-weight: bold;
+            padding: 14px; font-size: 1.1rem; font-weight: bold;
             border-radius: 8px; width: 100%; cursor: pointer;
+        }
+
+        #reset-btn {
+            background: #27ae60;
+            margin-top: 8px;
         }
 
         /* Colores de estado */
@@ -112,7 +118,7 @@
         .bg-discard { background-color: var(--state-discard) !important; }
         .bg-toque { background-color: var(--state-toque) !important; }
         .bg-fama { background-color: var(--state-fama) !important; }
-        .bg-win { background-color: var(--state-win) !important; color: white !important; border-color: #e68a00 !important; }
+        .bg-win { background-color: var(--state-win) !important; color: white !important; }
 
         .result-tag { font-weight: bold; font-size: 0.85rem; color: var(--primary); }
     </style>
@@ -132,12 +138,13 @@
             <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Ingresa 5 dígitos">
         </div>
 
-        <div class="history-container" id="historyList"></div>
+        <div class="history-container" id="historyList">
+            </div>
 
         <div class="bottom-tools">
             <div class="digit-board" id="digitBoard"></div>
-            <div id="winMsg" style="text-align:center; font-weight:bold; margin-top:5px; color: #d35400;"></div>
-            <button id="reset-btn" class="btn-main" style="display:none; margin-top:5px;" onclick="location.reload()">REINTENTAR</button>
+            <div id="winMsg" style="text-align:center; font-weight:bold; margin: 5px 0; color: #d35400;"></div>
+            <button id="reset-btn" class="btn-main" style="display:none;" onclick="location.reload()">NUEVO JUEGO</button>
         </div>
     </div>
 
@@ -148,7 +155,8 @@
           digitBoard = document.getElementById('digitBoard'),
           introScreen = document.getElementById('intro-screen'),
           gameScreen = document.getElementById('game-screen'),
-          winMsg = document.getElementById('winMsg');
+          winMsg = document.getElementById('winMsg'),
+          resetBtn = document.getElementById('reset-btn');
 
     const stateClasses = ["bg-none", "bg-used", "bg-discard", "bg-toque", "bg-fama"];
 
@@ -243,17 +251,16 @@
         
         globalSync();
 
-        // SCROLL AUTOMÁTICO: Desplaza el contenedor hacia la última cifra ingresada
+        // Asegura que el último intento sea visible haciendo scroll interno
         historyList.scrollTop = historyList.scrollHeight;
 
         if (famas === 5) {
             gameWon = true;
-            winMsg.innerText = "¡CIFRA CORRECTA!";
-            // FONDO NARANJA para los dígitos ganadores
+            winMsg.innerText = "¡ADIVINASTE!";
             digitGroup.querySelectorAll('.hist-digit-btn').forEach(btn => {
                 btn.className = 'hist-digit-btn bg-win';
             });
-            document.getElementById('reset-btn').style.display = 'block';
+            resetBtn.style.display = 'block';
             input.disabled = true;
         }
         input.value = "";
