@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Toque y Fama - Full Space</title>
+    <title>Toque y Fama - Keyboard Fix</title>
     <style>
         :root { 
             --primary: #1c3e50; 
@@ -16,7 +16,6 @@
             --state-win: #ff9800;
         }
         
-        /* Uso de dvh para ajustarse al alto real del navegador */
         html, body { 
             height: 100dvh; 
             margin: 0; padding: 0; 
@@ -44,7 +43,6 @@
             box-sizing: border-box;
         }
 
-        /* Panel Superior */
         .top-panel { flex: 0 0 auto; margin-bottom: 8px; }
         input { 
             width: 100%; padding: 12px; font-size: 1.2rem; 
@@ -52,16 +50,14 @@
             text-align: center; box-sizing: border-box;
         }
 
-        /* Historial: Ahora se estira para usar todo el espacio sobrante */
         .history-container {
-            flex: 1 1 auto; /* Se expande para llenar el vacío */
+            flex: 1 1 auto;
             background: white; border-radius: 8px; padding: 10px;
             overflow-y: auto; min-height: 0;
             box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Panel Inferior: Se mantiene compacto al fondo */
         .bottom-tools {
             flex: 0 0 auto; 
             background: rgba(255,255,255,0.9);
@@ -92,7 +88,7 @@
 
         .digit-group { display: flex; gap: 5px; }
         .hist-digit-btn { 
-            width: 38px; height: 38px; /* Un poco más grandes para llenar espacio */
+            width: 38px; height: 38px;
             border: 1px solid #ccc; border-radius: 6px; 
             font-weight: bold; font-size: 1.1rem;
         }
@@ -105,11 +101,6 @@
         .bg-toque { background-color: var(--state-toque) !important; }
         .bg-fama { background-color: var(--state-fama) !important; }
         .bg-win { background-color: var(--state-win) !important; color: white !important; }
-
-         @media (max-height: 600px) {
-             .hist-digit-btn { width: 30px; height: 30px; font-size: 0.9rem; }
-             .digit-box { height: 25px; }
-         }
     </style>
 </head>
 <body>
@@ -126,7 +117,7 @@
 
     <div id="game-screen">
         <div class="top-panel">
-            <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Ingresa 5 dígitos">
+            <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Escribre 5 dígitos">
         </div>
 
         <div class="history-container" id="historyList"></div>
@@ -194,6 +185,8 @@
 
     input.addEventListener("input", () => {
         if (input.value.length === 5) {
+            // AJUSTE: Quitamos el foco del input para cerrar el teclado inmediatamente
+            input.blur(); 
             setTimeout(checkGuess, 200);
         }
     });
@@ -249,12 +242,15 @@
             digitGroup.querySelectorAll('.hist-digit-btn').forEach(btn => btn.className = 'hist-digit-btn bg-win');
             resetBtn.style.display = 'block';
             input.disabled = true;
-            historyList.scrollTop = historyList.scrollHeight;
+        } else {
+            // Si no ganó, dejamos el input vacío pero no volvemos a dar el foco automáticamente
+            // para que el usuario pueda ver el resultado antes de decidir escribir de nuevo.
+            input.value = "";
         }
-        input.value = "";
     }
 </script>
 </body>
 </html>
+
 
 
