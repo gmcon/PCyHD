@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Toque y Fama - Optimizado</title>
+    <style>
+        :root { 
+            --primary: #1c3e50; 
+            --bg: #54c7ff; 
+            --state-used: #aee9ff;
+            --state-none: #ffffff;    
+            --state-discard: #d1d8e0; 
+            --state-toque: #a8f6c9;
+            --state-fama: #fffac4;
+            --state-win: #ff9800; /* Naranja para la victoria */
+        }
+        
+        body { 
+            font-family: sans-serif; 
+            background: var(--bg); 
+            margin: 0; padding: 0; 
+            height: 100vh; 
+            display: flex; flex-direction: column; 
+            overflow: hidden;
+        }
+
+        /* Pantalla de Introducción */
+        #intro-screen {
+            padding: 20px;
+            display: flex; flex-direction: column;
+            height: 100%; box-sizing: border-box;
+            background: white; overflow-y: auto;
+        }
+
+        /* Pantalla de Juego */
+        #game-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .top-panel {
+            padding: 5px;
+            display: flex; flex-direction: column;
+            gap: 5px;
+        }
+
+        input { 
+            width: 100%; padding: 10px; 
+            font-size: 1.2rem; border: 2px solid var(--primary); 
+            border-radius: 8px; text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Área de Historial - Maximizada */
+        .history-container {
+            flex-grow: 1;
+            background: white;
+            border-radius: 8px;
+            margin: 5px 0;
+            padding: 5px 10px;
+            overflow-y: auto;
+            /* Suaviza el scroll automático */
+            scroll-behavior: smooth;
+        }
+
+        .history-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 0; border-bottom: 1px solid #eee;
+        }
+
+        .digit-group { display: flex; gap: 4px; }
+        .hist-digit-btn { 
+            width: 32px; height: 32px; 
+            border: 1px solid #ccc; border-radius: 4px; 
+            font-weight: bold; font-size: 0.9rem;
+        }
+
+        /* Panel Inferior: Pirámide Reducida */
+        .bottom-tools {
+            background: rgba(255,255,255,0.8);
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .digit-board { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 4px; 
+        }
+
+        .digit-box { 
+            height: 25px; /* Altura reducida para ganar espacio arriba */
+            border: 1px solid #999; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-weight: bold; font-size: 0.8rem;
+            background: var(--state-none);
+        }
+
+        .btn-main {
+            background: var(--primary); color: white; border: none;
+            padding: 12px; font-size: 1.1rem; font-weight: bold;
+            border-radius: 8px; width: 100%; cursor: pointer;
+        }
+
+        /* Colores de estado */
+        .bg-none { background-color: var(--state-none) !important; }
+        .bg-used { background-color: var(--state-used) !important; }
+        .bg-discard { background-color: var(--state-discard) !important; }
+        .bg-toque { background-color: var(--state-toque) !important; }
+        .bg-fama { background-color: var(--state-fama) !important; }
+        .bg-win { background-color: var(--state-win) !important; color: white !important; border-color: #e68a00 !important; }
+
+        .result-tag { font-weight: bold; font-size: 0.85rem; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen">
+        <h2 style="color: var(--primary)">Toque y Fama</h2>
+        <p>Descubre la cifra de 5 dígitos distintos.</p>
+        <p><b>Famas (F):</b> Dígito y posición correcta.<br>
+           <b>Toques (T):</b> Dígito correcto, posición falsa.</p>
+        <button class="btn-main" style="margin-top:auto" onclick="initGameFlow()">INICIAR JUEGO</button>
+    </div>
+
+    <div id="game-screen">
+        <div class="top-panel">
+            <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Ingresa 5 dígitos">
+        </div>
+
+        <div class="history-container" id="historyList"></div>
+
+        <div class="bottom-tools">
+            <div class="digit-board" id="digitBoard"></div>
+            <div id="winMsg" style="text-align:center; font-weight:bold; margin-top:5px; color: #d35400;"></div>
+            <button id="reset-btn" class="btn-main" style="display:none; margin-top:5px;" onclick="location.reload()">REINTENTAR</button>
+        </div>
+    </div>
+
+<script>
+    let secretCode = "", gameWon = false, digitStates = Array(10).fill(0);
+    const historyList = document.getElementById('historyList'), 
+          input = document.getElementById('userInput'), 
+          digitBoard = document.getElementById('digitBoard'),
+          introScreen = document.getElementById('intro-screen'),
+          gameScreen = document.getElementById('game-screen'),
+          winMsg = document.getElementById('winMsg');
+
+    const stateClasses = ["bg-none", "bg-used", "bg-discard", "bg-toque", "bg-fama"];
+
+    function initGameFlow() {
+        introScreen.style.display = 'none';
+        gameScreen.style.display = 'flex';
+        generateSecret();
+        createDigitBoxes();
+        input.focus();
+    }
+
+    function generateSecret() {
+        let digits = ["0","1","2","3","4","5","6","7","8","9"];
+        digits.sort(() => Math.random() - 0.5);
+        secretCode = digits.slice(0, 5).join('');
+    }
+
+    function createDigitBoxes() {
+        digitBoard.innerHTML = '';
+        for (let i = 0; i <= 9; i++) {
+            let box = document.createElement('div');
+            box.className = 'digit-box bg-none'; box.id = `box-${i}`; box.innerText = i;
+            digitBoard.appendChild(box);
+        }
+    }
+
+    function globalSync() {
+        for (let i = 0; i <= 9; i++) {
+            document.getElementById(`box-${i}`).className = `digit-box ${stateClasses[digitStates[i]]}`;
+        }
+    }
+
+    function syncDigitFromAttempt(digit, startAttempt) {
+        document.querySelectorAll('.history-item').forEach(item => {
+            const a = parseInt(item.dataset.attempt || "0", 10);
+            if (a >= startAttempt) {
+                item.querySelectorAll('.hist-digit-btn').forEach(btn => {
+                    if (parseInt(btn.innerText, 10) === digit) {
+                        btn.className = `hist-digit-btn ${stateClasses[digitStates[digit]]}`;
+                    }
+                });
+            }
+        });
+    }
+
+    input.addEventListener("input", () => {
+        if (input.value.length === 5) {
+            setTimeout(checkGuess, 200);
+        }
+    });
+
+    function checkGuess() {
+        if (gameWon) return;
+        const guess = input.value;
+        if (guess.length !== 5) return;
+
+        guess.split('').forEach(d => { if (digitStates[parseInt(d)] === 0) digitStates[parseInt(d)] = 1; });
+
+        let famas = 0, toques = 0, secretUsed = Array(5).fill(false), guessUsed = Array(5).fill(false);
+        for (let i = 0; i < 5; i++) { if (guess[i] === secretCode[i]) { famas++; secretUsed[i] = true; guessUsed[i] = true; } }
+        for (let i = 0; i < 5; i++) { if (!guessUsed[i]) { for (let j = 0; j < 5; j++) { if (!secretUsed[j] && guess[i] === secretCode[j]) { toques++; secretUsed[j] = true; break; } } } }
+
+        const attemptNum = historyList.children.length + 1;
+        const newItem = document.createElement('div');
+        newItem.className = 'history-item';
+        newItem.dataset.attempt = attemptNum;
+
+        const digitGroup = document.createElement('div');
+        digitGroup.className = 'digit-group';
+
+        guess.split('').forEach(d => {
+            const btn = document.createElement('button');
+            const n = parseInt(d, 10);
+            btn.className = `hist-digit-btn ${stateClasses[digitStates[n]]}`;
+            btn.innerText = d;
+            btn.onclick = () => {
+                if (gameWon) return;
+                digitStates[n] = (digitStates[n] === 0) ? 1 : ((digitStates[n] % 4) + 1);
+                globalSync();
+                syncDigitFromAttempt(n, attemptNum);
+            };
+            digitGroup.appendChild(btn);
+        });
+
+        newItem.innerHTML = `<span style="font-size:0.7rem; color:#999">${attemptNum}</span>`;
+        newItem.appendChild(digitGroup);
+        const resSpan = document.createElement('span');
+        resSpan.className = 'result-tag';
+        resSpan.innerText = `${famas}F / ${toques}T`;
+        newItem.appendChild(resSpan);
+        historyList.appendChild(newItem);
+        
+        globalSync();
+
+        // SCROLL AUTOMÁTICO: Desplaza el contenedor hacia la última cifra ingresada
+        historyList.scrollTop = historyList.scrollHeight;
+
+        if (famas === 5) {
+            gameWon = true;
+            winMsg.innerText = "¡CIFRA CORRECTA!";
+            // FONDO NARANJA para los dígitos ganadores
+            digitGroup.querySelectorAll('.hist-digit-btn').forEach(btn => {
+                btn.className = 'hist-digit-btn bg-win';
+            });
+            document.getElementById('reset-btn').style.display = 'block';
+            input.disabled = true;
+        }
+        input.value = "";
+    }
+</script>
+</body>
+</html>
