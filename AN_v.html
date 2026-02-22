@@ -2,311 +2,263 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Toque y Fama - Vertical Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Agujero Negro - Mobile</title>
     <style>
         :root { 
             --primary: #1c3e50; 
             --bg: #54c7ff; 
-            --state-used: #aee9ff;
-            --state-none: #ffffff;    
-            --state-discard: #d1d8e0; 
-            --state-toque: #a8f6c9;
-            --state-fama: #fffac4;
-            --state-win: #ff9800;
+            --user-color: #7fdc7f;
+            --ai-color: #f3d36b;
+            --hole-color: #000000;
         }
         
-        body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            padding: 0; 
-            height: 100vh; 
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        html, body { 
+            height: 100dvh; 
+            margin: 0; padding: 0; 
+            overflow: hidden; 
+            background: var(--bg);
+            font-family: sans-serif;
         }
 
-        /* Pantalla de Introducción y Reglas */
+        body { display: flex; flex-direction: column; }
+
+        /* Pantalla de Reglas */
         #intro-screen {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            box-sizing: border-box;
-            background: white;
-            overflow-y: auto;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
+            background: white; z-index: 100; padding: 25px; box-sizing: border-box;
+            display: flex; flex-direction: column;
         }
 
-        .rules-content { flex-grow: 1; color: #333; line-height: 1.4; }
-        .rules-content h2 { color: var(--primary); border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
-        .example-box { background: #f9f9f9; padding: 10px; border-left: 4px solid var(--primary); margin: 10px 0; font-size: 0.9rem; }
+        .rules-content { flex: 1; overflow-y: auto; color: #333; line-height: 1.5; }
+        .rules-content h2 { color: var(--primary); margin-top: 0; }
 
-        /* Pantalla de Juego (Oculta al inicio) */
+        /* Pantalla de Juego */
         #game-screen {
             display: none;
             flex-direction: column;
-            height: 100%;
+            height: 100dvh;
             padding: 10px;
             box-sizing: border-box;
+            justify-content: space-between;
         }
 
-        /* Panel Superior: Entrada de datos */
-        .top-panel {
-            background: rgba(255,255,255,0.3);
-            padding: 10px;
-            border-radius: 12px;
-            margin-bottom: 10px;
+        /* Área de la Pirámide (Central) */
+        .pyramid-container {
+            flex: 1;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 10px;
+            min-height: 0;
         }
 
-        input { 
-            width: 100%; 
-            padding: 12px; 
-            font-size: 1.4rem; 
-            border: 2px solid var(--primary); 
-            border-radius: 8px; 
-            text-align: center;
-            letter-spacing: 5px;
-        }
+        .row { display: flex; justify-content: center; margin: 2px 0; }
 
-        /* Área central: Historial con scroll */
-        .history-container {
-            flex-grow: 1;
+        .cell {
+            width: 14vw; height: 14vw;
+            max-width: 55px; max-height: 55px;
+            margin: 3px;
+            border: 2px solid #000;
             background: white;
-            border-radius: 12px;
-            padding: 10px;
-            overflow-y: auto;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .history-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .digit-group { display: flex; gap: 4px; }
-        .hist-digit-btn { 
-            width: 35px; 
-            height: 35px; 
-            border: 1px solid #ccc; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            font-size: 1rem;
-        }
-
-        /* Panel Inferior: "La Pirámide" (Tablero de Control) */
-        .bottom-tools {
-            margin-top: 10px;
-            background: white;
-            padding: 10px;
-            border-radius: 12px;
-        }
-
-        .digit-board { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 6px; 
-        }
-
-        .digit-box { 
-            height: 40px; 
-            border: 1px solid #999; 
-            border-radius: 6px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: bold;
-        }
-
-        .btn-main {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 15px;
             font-size: 1.2rem;
             font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
             border-radius: 8px;
-            width: 100%;
-            cursor: pointer;
-            margin-top: 15px;
+            transition: transform 0.1s;
         }
 
-        /* Estados */
-        .bg-none { background-color: var(--state-none) !important; }
-        .bg-used { background-color: var(--state-used) !important; }
-        .bg-discard { background-color: var(--state-discard) !important; }
-        .bg-toque { background-color: var(--state-toque) !important; }
-        .bg-fama { background-color: var(--state-fama) !important; }
-        .bg-win { background-color: var(--state-win) !important; color: white; }
+        .cell.user { background: var(--user-color); }
+        .cell.ai { background: var(--ai-color); }
+        .cell.hole { background: var(--hole-color); color: white; border-color: #444; }
 
-        .result-tag { font-weight: 800; color: var(--primary); font-size: 0.9rem; min-width: 60px; text-align: right; }
-        .help-text { font-size: 0.7rem; color: #666; text-align: center; margin-top: 8px; }
+        /* Resultado e Info */
+        .info-panel {
+            flex: 0 0 auto;
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+        }
+
+        #result2 { font-weight: bold; font-size: 1.1rem; color: var(--primary); margin-bottom: 10px; }
+
+        .btn-main {
+            background: var(--primary); color: white; border: none;
+            padding: 16px; font-size: 1.2rem; font-weight: bold;
+            border-radius: 8px; width: 100%; cursor: pointer;
+        }
+
+        .legend {
+            display: flex; justify-content: center; gap: 15px; font-size: 0.8rem; margin-top: 5px;
+        }
+        .dot { width: 12px; height: 12px; display: inline-block; border-radius: 3px; margin-right: 4px; border: 1px solid #666; }
     </style>
 </head>
 <body>
 
     <div id="intro-screen">
         <div class="rules-content">
-            <h2>Toque y Fama</h2>
-            <p>Descubre la cifra secreta de <b>5 dígitos distintos</b> generada por el sistema.</p>
-            
-            <p>Al ingresar una cifra, recibirás pistas:</p>
+            <h2>Agujero Negro</h2>
+            <p>Un juego de estrategia donde colocas números del 1 al 10 en una pirámide.</p>
+            <p><b>Cómo jugar:</b></p>
             <ul>
-                <li><b style="color:#d4af37">Famas (F):</b> Dígitos correctos en la posición correcta.</li>
-                <li><b style="color:#2ecc71">Toques (T):</b> Dígitos que existen pero están en la posición incorrecta.</li>
+                <li>Toca una casilla para poner tu número actual (inicia en 1).</li>
+                <li>La página pondrá su número inmediatamente después.</li>
+                <li>Al final, la única casilla vacía se convierte en el <b>Agujero Negro</b>.</li>
+                <li>El agujero y sus vecinos <b>desaparecen</b> (no suman puntos).</li>
             </ul>
-
-            <div class="example-box">
-                <b>Ejemplo:</b><br>
-                Secreta: <span style="color:red">8 2 7 1 4</span><br>
-                Tuya: &nbsp;&nbsp;1 8 7 5 4<br>
-                <b>Resultado: 2 Famas (7 y 4) / 2 Toques (1 y 8)</b>
-            </div>
-            
-            <p><small>Nota: Puedes usar dígitos repetidos en tus intentos para descartar posiciones.</small></p>
+            <p><b>Gana</b> quien logre la mayor suma con sus casillas sobrevivientes.</p>
         </div>
         <button class="btn-main" onclick="initGameFlow()">INICIAR JUEGO</button>
     </div>
 
     <div id="game-screen">
-        <div class="top-panel">
-            <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Escribe 5 dígitos">
-        </div>
-
-        <div class="history-container" id="historyList">
+        <div class="pyramid-container" id="pyramid">
             </div>
 
-        <div class="bottom-tools">
-            <div class="digit-board" id="digitBoard"></div>
-            <p class="help-text">Toca los números en tus intentos para marcarlos</p>
-            <div id="winMsg" style="text-align:center; font-weight:bold; color:var(--state-win)"></div>
-            <div id="solutionArea" style="display:none; text-align:center; color:red;">
-                Clave: <span id="solDigits" style="font-size:1.5rem; letter-spacing:3px"></span>
+        <div class="info-panel">
+            <div id="result2">¡Tu turno! (Coloca el 1)</div>
+            <div class="legend">
+                <span><span class="dot" style="background:var(--user-color)"></span>Tú</span>
+                <span><span class="dot" style="background:var(--ai-color)"></span>Página</span>
+                <span><span class="dot" style="background:var(--hole-color)"></span>Hoyo</span>
             </div>
-            <button id="reset-btn" class="btn-main" style="display:none; margin-top:5px;" onclick="location.reload()">REINTENTAR</button>
+            <button id="reset-btn" class="btn-main" style="display:none; margin-top:10px; background:#27ae60" onclick="location.reload()">NUEVO JUEGO</button>
         </div>
     </div>
 
 <script>
-    let secretCode = "", attemptsAfterIdentified = 0, gameWon = false, digitStates = Array(10).fill(0);
-    const historyList = document.getElementById('historyList'), 
-          input = document.getElementById('userInput'), 
-          digitBoard = document.getElementById('digitBoard'),
-          introScreen = document.getElementById('intro-screen'),
-          gameScreen = document.getElementById('game-screen');
+const ROWS = 6;
+let positions = [];
+let indexOf = new Map();
+let boardVal, owner, dead, current, turn, holeIndex = -1, started = false;
 
-    const stateClasses = ["bg-none", "bg-used", "bg-discard", "bg-toque", "bg-fama"];
+// Inicializar estructura de datos
+for(let r=0; r<ROWS; r++){
+  for(let c=0; c<=r; c++){
+    let i = positions.length;
+    positions.push({r,c});
+    indexOf.set(r+","+c, i);
+  }
+}
 
-    function initGameFlow() {
-        introScreen.style.display = 'none';
-        gameScreen.style.display = 'flex';
-        startGame();
+function neighbors(i){
+  const {r,c} = positions[i];
+  let arr = [];
+  const cand = [[r,c-1],[r,c+1],[r-1,c-1],[r-1,c],[r+1,c],[r+1,c+1]];
+  for(let [rr,cc] of cand){
+    if(indexOf.has(rr+","+cc)) arr.push(indexOf.get(rr+","+cc));
+  }
+  return arr;
+}
+
+function initGameFlow() {
+    document.getElementById('intro-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    render();
+    resetGame();
+}
+
+function render(){
+  const pyramid = document.getElementById("pyramid");
+  pyramid.innerHTML = "";
+  for(let r=0; r<ROWS; r++){
+    let row = document.createElement("div");
+    row.className = "row";
+    for(let c=0; c<=r; c++){
+      let idx = indexOf.get(r+","+c);
+      let btn = document.createElement("div"); // Div para mejor control táctil
+      btn.className = "cell";
+      btn.id = "cell-" + idx;
+      btn.onclick = () => clickCell(idx);
+      row.appendChild(btn);
     }
+    pyramid.appendChild(row);
+  }
+}
 
-    function startGame() {
-        generateSecret();
-        createDigitBoxes();
-        input.focus();
+function paint(){
+  positions.forEach((_, i) => {
+    const cell = document.getElementById("cell-" + i);
+    cell.className = "cell";
+    if(i === holeIndex || dead[i]) cell.classList.add("hole");
+    if(boardVal[i] != null){
+      cell.textContent = boardVal[i];
+      cell.classList.add(owner[i] == "U" ? "user" : "ai");
+    } else {
+      cell.textContent = "";
     }
+  });
+}
 
-    function generateSecret() {
-        let digits = ["0","1","2","3","4","5","6","7","8","9"];
-        digits.sort(() => Math.random() - 0.5);
-        secretCode = digits.slice(0, 5).join('');
+function clickCell(i){
+  if(turn != "U" || boardVal[i] != null || holeIndex !== -1) return;
+
+  boardVal[i] = current;
+  owner[i] = "U";
+  paint();
+  turn = "A";
+  document.getElementById("result2").textContent = "Página pensando...";
+
+  setTimeout(() => {
+    let e = empty();
+    if(e.length <= 1){ endGame(); return; }
+
+    let pick = e[Math.floor(Math.random() * e.length)];
+    boardVal[pick] = current;
+    owner[pick] = "A";
+    paint();
+
+    if(empty().length <= 1){ 
+        endGame(); 
+    } else {
+        current++;
+        turn = "U";
+        document.getElementById("result2").textContent = "Tu turno: Coloca el " + current;
     }
+  }, 400);
+}
 
-    function createDigitBoxes() {
-        digitBoard.innerHTML = '';
-        for (let i = 0; i <= 9; i++) {
-            let box = document.createElement('div');
-            box.className = 'digit-box bg-none'; box.id = `box-${i}`; box.innerText = i;
-            digitBoard.appendChild(box);
-        }
-    }
+function empty() { return boardVal.map((v,i) => v==null?i:null).filter(v=>v!=null); }
 
-    function globalSync() {
-        for (let i = 0; i <= 9; i++) {
-            document.getElementById(`box-${i}`).className = `digit-box ${stateClasses[digitStates[i]]}`;
-        }
-    }
+function endGame(){
+  let e = empty();
+  let hole = e[0];
+  holeIndex = hole;
+  neighbors(hole).forEach(n => dead[n] = true);
 
-    function syncDigitFromAttempt(digit, startAttempt) {
-        document.querySelectorAll('.history-item').forEach(item => {
-            const a = parseInt(item.dataset.attempt || "0", 10);
-            if (a >= startAttempt) {
-                item.querySelectorAll('.hist-digit-btn').forEach(btn => {
-                    if (parseInt(btn.innerText, 10) === digit) {
-                        btn.className = `hist-digit-btn ${stateClasses[digitStates[digit]]}`;
-                    }
-                });
-            }
-        });
-    }
+  let sumU=0, sumA=0;
+  for(let i=0; i<boardVal.length; i++){
+    if(i==hole || dead[i]) continue;
+    if(owner[i]=="U") sumU += boardVal[i];
+    if(owner[i]=="A") sumA += boardVal[i];
+  }
 
-    input.addEventListener("input", () => {
-        if (input.value.length === 5) {
-            setTimeout(checkGuess, 200);
-        }
-    });
+  paint();
 
-    function checkGuess() {
-        if (gameWon) return;
-        const guess = input.value;
-        if (guess.length !== 5) return;
+  let res = "";
+  if(sumU > sumA)      res = "¡GANASTE!";
+  else if(sumA > sumU) res = "PERDISTE";
+  else                res = "EMPATE";
+  
+  document.getElementById("result2").innerHTML = `${res}<br><small>Tú: ${sumU} pts - Página: ${sumA} pts</small>`;
+  document.getElementById("reset-btn").style.display = "block";
+}
 
-        guess.split('').forEach(d => { if (digitStates[parseInt(d)] === 0) digitStates[parseInt(d)] = 1; });
-
-        let famas = 0, toques = 0, secretUsed = Array(5).fill(false), guessUsed = Array(5).fill(false);
-        for (let i = 0; i < 5; i++) { if (guess[i] === secretCode[i]) { famas++; secretUsed[i] = true; guessUsed[i] = true; } }
-        for (let i = 0; i < 5; i++) { if (!guessUsed[i]) { for (let j = 0; j < 5; j++) { if (!secretUsed[j] && guess[i] === secretCode[j]) { toques++; secretUsed[j] = true; break; } } } }
-
-        const attemptNum = historyList.children.length + 1;
-        const newItem = document.createElement('div');
-        newItem.className = 'history-item';
-        newItem.dataset.attempt = attemptNum;
-
-        const digitGroup = document.createElement('div');
-        digitGroup.className = 'digit-group';
-
-        guess.split('').forEach(d => {
-            const btn = document.createElement('button');
-            const n = parseInt(d, 10);
-            btn.className = `hist-digit-btn ${stateClasses[digitStates[n]]}`;
-            btn.innerText = d;
-            btn.onclick = () => {
-                if (gameWon) return;
-                digitStates[n] = (digitStates[n] === 0) ? 1 : ((digitStates[n] % 4) + 1);
-                globalSync();
-                syncDigitFromAttempt(n, attemptNum);
-            };
-            digitGroup.appendChild(btn);
-        });
-
-        newItem.innerHTML = `<span style="font-size:0.7rem; color:#999">${attemptNum}</span>`;
-        newItem.appendChild(digitGroup);
-        const resSpan = document.createElement('span');
-        resSpan.className = 'result-tag';
-        resSpan.innerText = `${famas}F / ${toques}T`;
-        newItem.appendChild(resSpan);
-        historyList.appendChild(newItem);
-        globalSync();
-        
-        newItem.scrollIntoView({ behavior: 'smooth', block: 'end' });
-
-        if (famas === 5) {
-            document.getElementById('winMsg').innerText = "¡FELICITACIONES!";
-            gameWon = true;
-            document.getElementById('reset-btn').style.display = 'block';
-        }
-        input.value = "";
-    }
+function resetGame(){
+  boardVal = Array(positions.length).fill(null);
+  owner = Array(positions.length).fill(null);
+  dead = Array(positions.length).fill(false);
+  holeIndex = -1;
+  current = 1;
+  turn = "U";
+  document.getElementById("result2").textContent = "Tu turno: Coloca el 1";
+  paint();
+}
 </script>
 </body>
 </html>
+
