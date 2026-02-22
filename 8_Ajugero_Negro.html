@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Agujero Negro</title>
+
+<style>
+body{
+  margin:0;
+  padding:15px;
+  height:100vh;
+  overflow:hidden;
+  font-family: Arial, sans-serif;
+  background:#54c7ff;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+}
+
+.container{
+  flex:1;
+  display:flex;
+  justify-content:flex-start;   /* corregido */
+  gap:4vw;
+}
+
+/* Bloque del juego (pirámide + resultados) */
+.gameBlock{
+  display:inline-block;
+}
+
+.pyramid{
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+}
+
+.row{
+  display:flex;
+  justify-content:center;
+  margin:1vh 0;
+}
+
+/* Celdas (son botones) */
+.cell{
+  width:10vh;
+  height:10vh;
+  margin:0.5vh;
+  border:2px solid black;
+  background:white;
+  font-size:2.5vh;
+  font-weight:bold;
+  cursor:pointer;
+  padding:0;                  /* para evitar “herencias” raras */
+}
+
+.cell.user{ background:#7fdc7f; }
+.cell.ai{ background:#f3d36b; }
+
+/* Negro para hoyo y vecinas */
+.cell.hole{
+  background:black;
+  color:white;
+}
+
+/* Resultado */
+.result2{
+  margin-top:1vh;
+  font-weight:bold;
+  font-size:4vh;
+}
+
+/* Cuadro de reglas */
+.rules-column{
+  width:320px;
+  flex-shrink:0;
+  background:#fff;
+  border:2px solid #000;
+  padding:15px;
+  font-size:0.82rem;
+  line-height:1.5;
+  color:#000;
+  max-height:85vh;
+  overflow-y:auto;
+}
+
+.rules-column h3{
+  margin-top:0;
+  font-size:1rem;
+  border-bottom:1px solid #000;
+  padding-bottom:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div style="width:40%;">
+    <button style="width:28%; height:6%; background-color:#000000; color:white;" onclick="startGame()">
+      <b><span style="font-size:1.1rem;">Iniciar</span></b>
+    </button>
+  </div>
+
+  <!-- Reservo espacio (para que el panel derecho quede a la derecha desde el inicio) -->
+  <div id="gameBlock" class="gameBlock" style="width:30%; visibility:hidden;">
+    <div id="pyramid" class="pyramid"></div>
+    <div id="result2" class="result2"></div>
+  </div>
+
+  <div class="rules-column">
+    <table>
+      <tr>
+        <td width="35%">
+          <br><br>
+          <img src="dedo.jpg" width="100%">
+        </td>
+        <td>
+          <h3>Agujero Negro</h3>
+          Este &nbsp;<b>JUEGO</b> es engañosamente<br>
+          simple, pero muy <b>Estratégico</b>. El<br>
+          desafío es elegir dónde colocarás<br>
+          tus números de 1 a 10 para ganar
+          <br>
+        </td>
+      </tr>
+    </table>
+
+    <br>
+    Para comenzar haz <b>Clic</b> en el botón <b>Iniciar</b> y se verá una <b>Pirámide</b> de casillas al centro de la pantalla.<br>
+    <br>
+    Haz <b>Clic</b> en una casilla vacía, su <b>COLOR</b> cambiará a <b>VERDE</b>, su <b>VALOR</b> a <b>1</b>. Luego <b>la página</b> elegirá una casilla vacía, su color pasará a <b>naranja</b>, &nbsp;su <b>valor</b> a <b>1</b>
+    <br><br>
+    <b>Repite</b> hasta <b>10</b> y la única casilla aún <b>vacía</b> pasará a color <b>negro</b>, junto con sus vecinas. Todas las casillas negras <b>no serán consideradas</b> al obtener las sumas 
+    <br><br><
+    <b>Ganas</b> si la suma de tus casillas es mayor a la suma<br>
+    de las casillas que eligió la página<br><br>
+    <br>
+    -- para jugar nuevamente dale Clic al botón Iniciar --
+  </div>
+</div>
+
+<script>
+const ROWS=6;
+let positions=[];
+let indexOf=new Map();
+
+for(let r=0;r<ROWS;r++){
+  for(let c=0;c<=r;c++){
+    let i=positions.length;
+    positions.push({r,c});
+    indexOf.set(r+","+c,i);
+  }
+}
+
+function neighbors(i){
+  const {r,c}=positions[i];
+  let arr=[];
+  const cand=[
+    [r,c-1],[r,c+1],
+    [r-1,c-1],[r-1,c],
+    [r+1,c],[r+1,c+1]
+  ];
+  for(let [rr,cc] of cand){
+    if(indexOf.has(rr+","+cc)) arr.push(indexOf.get(rr+","+cc));
+  }
+  return arr;
+}
+
+let boardVal, owner, dead, current, turn;
+let holeIndex = -1;
+
+const pyramid=document.getElementById("pyramid");
+const gameBlock=document.getElementById("gameBlock");
+
+function render(){
+  pyramid.innerHTML="";
+  for(let r=0;r<ROWS;r++){
+    let row=document.createElement("div");
+    row.className="row";
+    for(let c=0;c<=r;c++){
+      let idx=indexOf.get(r+","+c);
+      let btn=document.createElement("button");
+      btn.className="cell";
+      btn.onclick=()=>clickCell(idx);
+      row.appendChild(btn);
+    }
+    pyramid.appendChild(row);
+  }
+}
+
+function paint(){
+  const cells=document.querySelectorAll(".cell");
+  cells.forEach((cell,i)=>{
+    cell.className="cell";
+
+    if(i === holeIndex || dead[i]) cell.classList.add("hole");
+
+    if(boardVal[i]!=null){
+      cell.textContent=boardVal[i];
+      cell.classList.add(owner[i]=="U" ? "user" : "ai");
+    }else{
+      cell.textContent="";
+    }
+  });
+}
+
+function empty(){
+  return boardVal.map((v,i)=>v==null?i:null).filter(v=>v!=null);
+}
+
+function clickCell(i){
+  if(turn!="U" || boardVal[i]!=null) return;
+
+  boardVal[i]=current;
+  owner[i]="U";
+  paint();
+  turn="A";
+
+  setTimeout(()=>{
+    if(empty().length<=1){ endGame(); return; }
+
+    let e=empty();
+    let pick=e[Math.floor(Math.random()*e.length)];
+
+    boardVal[pick]=current;
+    owner[pick]="A";
+    paint();
+
+    if(empty().length<=1){ endGame(); return; }
+
+    current++;
+    if(current>10){ endGame(); return; }
+
+    turn="U";
+  },300);
+}
+
+function endGame(){
+  let e=empty();
+  let hole=e[0];
+
+  holeIndex = hole;
+  neighbors(hole).forEach(n=>dead[n]=true);
+
+  let sumU=0,sumA=0;
+  for(let i=0;i<boardVal.length;i++){
+    if(i==hole || dead[i]) continue;
+    if(owner[i]=="U") sumU+=boardVal[i];
+    if(owner[i]=="A") sumA+=boardVal[i];
+  }
+
+  paint();
+
+  let res="";
+  if(sumU>sumA)      res="¡Ganaste  !";
+  else if(sumA>sumU) res="¡Perdiste !";
+  else               res="¡Empataron!";
+  res = res + "      Tú: " + sumU + "     -     Página: " + sumA;
+  document.getElementById("result2").textContent=res;
+}
+
+function resetGame(){
+  boardVal=Array(positions.length).fill(null);
+  owner=Array(positions.length).fill(null);
+  dead=Array(positions.length).fill(false);
+  holeIndex = -1;
+  current=1;
+  turn="U";
+  document.getElementById("result2").textContent="";
+  paint();
+}
+
+let started = false;
+function startGame(){
+  gameBlock.style.display = "inline-block";
+  gameBlock.style.visibility = "visible";
+
+  if(!started){
+    render();
+    started = true;
+  }
+  resetGame();
+}
+
+/* Nota: No renderizo ni reseteo al cargar.
+   Así la pirámide no aparece hasta que presionen Iniciar. */
+</script>
+
+</body>
+</html>
