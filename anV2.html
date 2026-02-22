@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Toque y Fama - DVH Fixed</title>
+    <title>Toque y Fama - Full Space</title>
     <style>
         :root { 
             --primary: #1c3e50; 
@@ -16,12 +16,10 @@
             --state-win: #ff9800;
         }
         
-        /* Ajuste crítico para móviles usando dvh (Dynamic Viewport Height) */
+        /* Uso de dvh para ajustarse al alto real del navegador */
         html, body { 
-            height: 100vh;
-            height: 100dvh; /* Usa el alto dinámico real disponible */
-            margin: 0; 
-            padding: 0; 
+            height: 100dvh; 
+            margin: 0; padding: 0; 
             overflow: hidden; 
             background: var(--bg);
         }
@@ -30,95 +28,76 @@
             font-family: sans-serif; 
             display: flex; 
             flex-direction: column; 
-            box-sizing: border-box;
         }
 
         #intro-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; 
-            height: 100dvh;
-            background: white; z-index: 100;
-            padding: 20px; box-sizing: border-box;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
+            background: white; z-index: 100; padding: 25px; box-sizing: border-box;
             display: flex; flex-direction: column;
         }
 
         #game-screen {
             display: none;
             flex-direction: column;
-            height: 100dvh; /* Altura dinámica real */
-            width: 100%;
-            padding: 8px;
+            height: 100dvh;
+            padding: 10px;
             box-sizing: border-box;
         }
 
-        /* 1. Panel Superior (Más compacto) */
-        .top-panel {
-            flex: 0 0 auto;
-            margin-bottom: 5px;
-        }
-
+        /* Panel Superior */
+        .top-panel { flex: 0 0 auto; margin-bottom: 8px; }
         input { 
-            width: 100%; padding: 10px; 
-            font-size: 1.1rem; border: 2px solid var(--primary); 
-            border-radius: 8px; text-align: center;
-            box-sizing: border-box;
+            width: 100%; padding: 12px; font-size: 1.2rem; 
+            border: 2px solid var(--primary); border-radius: 8px; 
+            text-align: center; box-sizing: border-box;
         }
 
-        /* 2. Área de Historial (Flexible y con scroll interno) */
+        /* Historial: Ahora se estira para usar todo el espacio sobrante */
         .history-container {
-            flex: 1 1 auto;
-            background: white;
-            border-radius: 8px;
-            padding: 5px;
-            overflow-y: auto;
-            min-height: 0; /* Permite que el contenedor se encoja para dejar espacio abajo */
+            flex: 1 1 auto; /* Se expande para llenar el vacío */
+            background: white; border-radius: 8px; padding: 10px;
+            overflow-y: auto; min-height: 0;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
             -webkit-overflow-scrolling: touch;
         }
 
-        /* 3. Panel Inferior (Prioridad máxima de visibilidad) */
+        /* Panel Inferior: Se mantiene compacto al fondo */
         .bottom-tools {
             flex: 0 0 auto; 
-            background: rgba(255,255,255,0.98);
-            padding: 8px;
-            margin-top: 5px;
-            border-radius: 8px;
+            background: rgba(255,255,255,0.9);
+            padding: 12px; margin-top: 8px; border-radius: 8px;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
 
         .digit-board { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 4px; 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; 
         }
 
         .digit-box { 
-            height: 28px; /* Altura optimizada */
-            border: 1px solid #999; border-radius: 4px; 
+            height: 35px; border: 1px solid #999; border-radius: 4px; 
             display: flex; align-items: center; justify-content: center; 
-            font-weight: bold; font-size: 0.85rem;
-            background: var(--state-none);
+            font-weight: bold; font-size: 1rem; background: var(--state-none);
         }
 
         .btn-main {
             background: var(--primary); color: white; border: none;
-            padding: 12px; font-size: 1.1rem; font-weight: bold;
+            padding: 15px; font-size: 1.1rem; font-weight: bold;
             border-radius: 8px; width: 100%; cursor: pointer;
         }
 
-        /* Ajustes de los botones del historial */
         .history-item {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 5px 0; border-bottom: 1px solid #eee;
+            padding: 10px 0; border-bottom: 1px solid #f0f0f0;
         }
 
-        .digit-group { display: flex; gap: 3px; }
+        .digit-group { display: flex; gap: 5px; }
         .hist-digit-btn { 
-            width: 32px; height: 32px; 
-            border: 1px solid #ccc; border-radius: 4px; 
-            font-weight: bold; font-size: 0.9rem;
+            width: 38px; height: 38px; /* Un poco más grandes para llenar espacio */
+            border: 1px solid #ccc; border-radius: 6px; 
+            font-weight: bold; font-size: 1.1rem;
         }
 
-        .result-tag { font-weight: bold; font-size: 0.8rem; color: var(--primary); min-width: 55px; text-align: right; }
+        .result-tag { font-weight: 800; font-size: 1rem; color: var(--primary); }
 
         .bg-none { background-color: var(--state-none) !important; }
         .bg-used { background-color: var(--state-used) !important; }
@@ -132,26 +111,24 @@
 
     <div id="intro-screen">
         <h2 style="color: var(--primary); margin-top: 0;">Toque y Fama</h2>
-        <div style="flex-grow: 1; overflow-y: auto;">
+        <div style="flex-grow: 1;">
             <p>Descubre la cifra de 5 dígitos distintos.</p>
             <p><b>Famas (F):</b> Dígito y posición correcta.</p>
             <p><b>Toques (T):</b> Dígito correcto, posición falsa.</p>
-            <hr>
-            <p><small>Toca los dígitos en tus intentos para marcarlos con colores.</small></p>
         </div>
         <button class="btn-main" onclick="initGameFlow()">INICIAR JUEGO</button>
     </div>
 
     <div id="game-screen">
         <div class="top-panel">
-            <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Escribe 5 dígitos">
+            <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Ingresa 5 dígitos">
         </div>
 
         <div class="history-container" id="historyList"></div>
 
         <div class="bottom-tools">
             <div class="digit-board" id="digitBoard"></div>
-            <div id="winMsg" style="text-align:center; font-weight:bold; color: #d35400; font-size: 0.85rem; height: 1rem; margin: 4px 0;"></div>
+            <div id="winMsg" style="text-align:center; font-weight:bold; color: #d35400; margin: 5px 0; min-height: 1.2rem;"></div>
             <button id="reset-btn" class="btn-main" style="display:none; background: #27ae60;" onclick="location.reload()">NUEVO JUEGO</button>
         </div>
     </div>
@@ -173,7 +150,6 @@
         gameScreen.style.display = 'flex';
         generateSecret();
         createDigitBoxes();
-        // El retraso ayuda a que el teclado no mueva el layout antes de tiempo
         setTimeout(() => input.focus(), 300);
     }
 
@@ -250,7 +226,7 @@
             digitGroup.appendChild(btn);
         });
 
-        newItem.innerHTML = `<span style="font-size:0.65rem; color:#999">${attemptNum}</span>`;
+        newItem.innerHTML = `<span style="font-size:0.7rem; color:#999">${attemptNum}</span>`;
         newItem.appendChild(digitGroup);
         const resSpan = document.createElement('span');
         resSpan.className = 'result-tag';
@@ -275,3 +251,4 @@
 </script>
 </body>
 </html>
+
