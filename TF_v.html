@@ -101,20 +101,40 @@
         .bg-toque { background-color: var(--state-toque) !important; }
         .bg-fama { background-color: var(--state-fama) !important; }
         .bg-win { background-color: var(--state-win) !important; color: white !important; }
+
+        #intro-screen p { margin: 8px 0; line-height: 1.4; }
+        .text-blue { color: #0000ff; font-weight: bold; }
+        .text-red { color: #ff0000; font-weight: bold; }
+        .example-box { 
+            margin-top: 15px; 
+            font-family: sans-serif; 
+            font-size: 0.95rem;
+        }
     </style>
 </head>
 <body>
 
     <div id="intro-screen">
-        <h2 style="color: var(--primary); margin-top: 0;">Toque y Fama</h2>
-        <div style="flex-grow: 1;">
-            <p>Descubre la cifra de 5 dígitos distintos.</p>
-            <p><b>Famas (F):</b> Dígito y posición correcta.</p>
-            <p><b>Toques (T):</b> Dígito correcto, posición falsa.</p>
+        <h2 style="color: var(--primary); margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Toque y Fama</h2>
+        <div style="flex-grow: 1; overflow-y: auto;">
+        <p><strong>Juego de lógica</strong> en que debes descubrir una <strong>Cifra</strong> de <strong>5 dígitos <span class="text-red">distintos</span></strong>, generada por la página...</p>
+        
+        <p>Ingresa cifras de <strong>5 dígitos (<span class="text-blue">puedes incluir repetidos</span>)</strong> y la página mostrará la cantidad de <strong>Toques</strong> y <strong>Famas</strong>...</p>
+        
+        <p><span class="text-blue">Toques:</span> cuántos dígitos existen en distinta posición.</p>
+        <p><span class="text-blue">Famas:</span> cuántos dígitos existen en la misma posición.</p>
+        <p style="font-size: 0.85rem;">(si un dígito puede ser tanto TOQUE como FAMA entonces es FAMA)</p>
+        
+        <div class="example-box">
+            <strong>Ejemplo</strong><br>
+            Cifra secreta: 8 2 7 1 4<br>
+            Ingresa Cifra: 1 8 7 5 4<br><br>
+            Toques: 2 (los dígitos 1 y 8)<br>
+            Famas: 2 (los dígitos 4 y 7)
         </div>
-        <button class="btn-main" onclick="initGameFlow()">INICIAR JUEGO</button>
     </div>
-
+    <button class="btn-main" onclick="initGameFlow()">INICIAR JUEGO</button>
+</div>
     <div id="game-screen">
         <div class="top-panel">
             <input type="number" id="userInput" pattern="\d*" inputmode="numeric" placeholder="Escribre 5 dígitos">
@@ -251,6 +271,8 @@
 </script>
 </body>
 </html>
+
+
 
 
 
